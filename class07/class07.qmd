@@ -1,0 +1,200 @@
+---
+title: "class07"
+author: "Edward Vo (A16215241)"
+format: pdf
+---
+
+# Clustering
+
+We will start today's lab with clustering methods, in particular so-called K-means. The main function for this in R is `kmeans()`
+
+Let's try it on some made up data where we know what the answer should be.
+
+```{r}
+x<-rnorm(60, mean=3)
+hist(x)
+```
+
+60 points
+```{r}
+tmp <- c(rnorm(30, mean=3), rnorm(30, -3))
+x <- cbind(x=tmp, y=rev(tmp))
+head(x)
+```
+
+We can pass this to the base R `plot()` function for a quick plot
+
+```{r}
+plot(x)
+```
+
+```{r}
+k <- kmeans(x, centers=2, nstart=20)
+k
+```
+
+> Q1. How many points are in each cluster?
+
+```{r}
+k$size
+```
+
+> Q2. Cluster membership?
+
+```{r}
+k$cluster
+```
+
+> Q3. Cluster centers?
+
+```{r}
+k$centers
+```
+
+> Q4. Plot my clustering results
+
+```{r}
+plot(x, col=k$cluster, pch=16)
+```
+
+> Q5. Cluster the data again into 4 groups and plot the results
+
+```{r}
+k4 <- kmeans(x, centers=4, nstart=20)
+plot(x, col=k4$cluster, pch=16)
+```
+
+K-means is very popular mostly because it is fast and relatively straightforward to run and understand. It has a big limitation in that you need to tell it how many groups(k, or centers) you want.
+
+# Hierarchical clustering
+
+The main function in base R is called `hclust()`. You have to pass it in a "distance matrix" not just your input data.
+
+You can generate a distance matrix with the `dist()` function.
+
+```{r}
+hc <- hclust(dist(x))
+hc
+```
+
+```{r}
+plot(hc)
+```
+
+To find clusters (cluster membership vector) from a `hclust()` result we can "cut" the tree at a certain height that we like.
+
+```{r}
+plot(hc)
+abline(h=8, col="red")
+grps <- cutree(hc, h=8)
+```
+
+```{r}
+table(grps)
+```
+
+> Q6. Plot out hclust results
+
+```{r}
+plot(x, col=grps)
+```
+
+# Principal Component Analysis
+
+## PCA of UK food data
+
+```{r}
+url <- "https://tinyurl.com/UK-foods"
+x <- read.csv(url)
+```
+
+# Question 1
+
+```{r}
+dim(x)
+```
+
+```{r}
+head(x)
+```
+
+Change index
+```{r}
+# Note how the minus indexing works
+rownames(x) <- x[,1]
+x <- x[,-1]
+head(x)
+```
+
+```{r}
+# Alternatively
+x <- read.csv(url, row.names=1)
+head(x)
+```
+
+# Question 2
+I prefer second method since code is simpler & assigns directly
+I would use first method when the names column is in the first column (no other data to the left)
+
+Spotting major differences and trends
+```{r}
+barplot(as.matrix(x), beside=T, col=rainbow(nrow(x)))
+```
+
+# Question 3
+```{r}
+barplot(as.matrix(x), beside=F, col=rainbow(nrow(x)))
+
+# Changing to beside=F stacks the individual bars instead of side-by-side
+```
+
+# Question 5
+
+```{r}
+pairs(x, col=rainbow(10), pch=16, cex=2)
+```
+Paired plot matrix generated
+Above diagonal is flipped from below diagonal
+If lie on straight line = same amount
+
+# Question 6
+Northern Ireland has a lot of deviation from the straight line
+
+PCA to the rescue
+PCA can help us make sense of these types of datasets
+```{r}
+# Switch countries and foods with `t()`
+head(t(x))
+
+# Use the prcomp() PCA function 
+pca <- prcomp(t(x))
+summary(pca)
+```
+PC1 captures 67% of all data, very representative
+
+# Question 7
+```{r}
+pca$x
+
+# Plot PC1 vs PC2
+plot(pca$x[,1], pca$x[,2])
+text(pca$x[,1], pca$x[,2], colnames(x))
+```
+
+# Question 8
+```{r}
+plot(pca$x[,1], pca$x[,2], col=c("orange", "red", "blue", "darkgreen"), pch=16)
+text(pca$x[,1], pca$x[,2], colnames(x))
+```
+
+```{r}
+head(pca$rotation)
+# Contribution to PCA
+```
+"Loadings" tell us how much the original variables (in our case, the foods) contribute to the new variables (the PCA)
+```{r}
+## Lets focus on PC1 as it accounts for > 90% of variance 
+par(mar=c(10, 3, 0.35, 0))
+barplot( pca$rotation[,1], las=2 )
+```
+
